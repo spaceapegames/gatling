@@ -77,6 +77,11 @@ class GlobalReportGenerator(runOn: String, dataReader: DataReader, componentLibr
 
 		def indicatorChartComponent: Component = componentLibrary.getRequestDetailsIndicatorChartComponent
 
+		def serverStatsComponent: Component = {
+
+			componentLibrary.getServerStatsChartComponent(dataReader.runStart, dataReader.runEnd, dataReader.graphiteCpuStatistics())
+		}
+
 		val template = new GlobalPageTemplate(
 			statisticsComponent,
 			indicatorChartComponent,
@@ -84,7 +89,8 @@ class GlobalReportGenerator(runOn: String, dataReader: DataReader, componentLibr
 			activeSessionsChartComponent,
 			responseTimeDistributionChartComponent,
 			requestsChartComponent,
-			transactionsChartComponent)
+			transactionsChartComponent,
+			serverStatsComponent)
 
 		new TemplateWriter(globalFile(runOn)).writeToFile(template.getOutput)
 	}

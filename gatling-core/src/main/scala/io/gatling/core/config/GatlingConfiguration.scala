@@ -87,7 +87,8 @@ object GatlingConfiguration {
 					lowerBound = config.getInt(CONF_CHARTING_INDICATORS_LOWER_BOUND),
 					higherBound = config.getInt(CONF_CHARTING_INDICATORS_HIGHER_BOUND),
 					percentile1 = config.getInt(CONF_CHARTING_INDICATORS_PERCENTILE1),
-					percentile2 = config.getInt(CONF_CHARTING_INDICATORS_PERCENTILE2))),
+					percentile2 = config.getInt(CONF_CHARTING_INDICATORS_PERCENTILE2)),
+				graphiteCpuTarget = config.getString(CONF_CHARTING_GRAPHITE_CPU_TARGET)),
 			http = HttpConfiguration(
 				baseURLs = config.getString(CONF_HTTP_BASE_URLS).toStringSeq,
 				proxy = config.getString(CONF_HTTP_PROXY_HOST).trimToOption.map { host =>
@@ -115,7 +116,9 @@ object GatlingConfiguration {
 						val storePassword = config.getString(passwordKey)
 						val storeAlgorithm = config.getString(algorithmKey).trimToOption
 
-						storeFile.map(StoreConfiguration(storeType, _, storePassword, storeAlgorithm))
+						storeType.map { t =>
+							StoreConfiguration(t, storeFile.getOrElse(throw new UnsupportedOperationException(s"$typeKey defined as $t but store file isn't defined")), storePassword, storeAlgorithm)
+						}
 					}
 
 					val trustStore = storeConfig(CONF_HTTP_SSL_TRUST_STORE_TYPE, CONF_HTTP_SSL_TRUST_STORE_FILE, CONF_HTTP_SSL_TRUST_STORE_PASSWORD, CONF_HTTP_SSL_TRUST_STORE_ALGORITHM)
@@ -233,7 +236,8 @@ case class ChartingConfiguration(
 	statsTsvSeparator: String,
 	maxPlotsPerSeries: Int,
 	accuracy: Int,
-	indicators: IndicatorsConfiguration)
+	indicators: IndicatorsConfiguration,
+	graphiteCpuTarget: String)
 
 case class IndicatorsConfiguration(
 	lowerBound: Int,
@@ -289,7 +293,7 @@ case class SslConfiguration(
 	keyStore: Option[StoreConfiguration])
 
 case class StoreConfiguration(
-	storeType: Option[String],
+	storeType: String,
 	file: String,
 	password: String,
 	algorithm: Option[String])

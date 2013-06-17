@@ -29,7 +29,8 @@ package object validation {
 
 	implicit class ValidationList[T](val validations: List[Validation[T]]) extends AnyVal {
 		def sequence: Validation[List[T]] = {
-
+			null
+			/*
 			@tailrec
 			def sequenceRec(validations: List[Validation[T]], successes: List[T]): Validation[List[T]] = validations match {
 				case Nil => successes.success
@@ -39,6 +40,7 @@ package object validation {
 				}
 			}
 			sequenceRec(validations, Nil).map(_.reverse)
+			*/
 		}
 	}
 }

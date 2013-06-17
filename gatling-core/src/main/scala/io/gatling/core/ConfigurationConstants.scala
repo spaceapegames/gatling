@@ -49,6 +49,7 @@ object ConfigurationConstants {
 	val CONF_CHARTING_INDICATORS_HIGHER_BOUND = "gatling.charting.indicators.higherBound"
 	val CONF_CHARTING_INDICATORS_PERCENTILE1 = "gatling.charting.indicators.percentile1"
 	val CONF_CHARTING_INDICATORS_PERCENTILE2 = "gatling.charting.indicators.percentile2"
+	val CONF_CHARTING_GRAPHITE_CPU_TARGET = "gatling.charting.graphiteCpuTarget"
 
 	val CONF_HTTP_BASE_URLS = "gatling.http.baseUrls"
 	val CONF_HTTP_PROXY_HOST = "gatling.http.proxy.host"

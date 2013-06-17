@@ -55,4 +55,5 @@ trait ComponentLibrary {
 	def getNumberOfRequestsChartComponent: Component
 	def getGroupDurationChartComponent(runStart: Long, durationsSuccess: Series[IntRangeVsTimePlot], durationsFailure: Series[IntRangeVsTimePlot]): Component
 	def getGroupDetailsDurationDistributionChartComponent(durationsSuccess: Series[IntVsTimePlot], durationsFailure: Series[IntVsTimePlot]): Component
+	def getServerStatsChartComponent(runStart: Long, runEnd: Long, cpuPerformance: Seq[Series[IntVsTimePlot]]): Component
 }

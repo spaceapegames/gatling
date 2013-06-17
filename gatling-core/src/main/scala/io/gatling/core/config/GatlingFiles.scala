@@ -16,6 +16,7 @@
 package io.gatling.core.config
 
 import scala.collection.mutable
+
 import scala.tools.nsc.io.{ Directory, Path }
 import scala.tools.nsc.io.Path.string2path
 
@@ -62,14 +63,8 @@ object GatlingFiles {
 
 	def validateResource(filePath: Path, defaultFolder: String): Validation[Resource] = {
 		val defaultPath = defaultFolder / filePath
-		val classPathResource = Option(getClass.getClassLoader.getResource(defaultPath.toString)).map { url =>
-			url.getProtocol match {
-				case "file" => FileResource(url.getFile.toFile)
-				case "jar" => ClassPathResource(url, filePath.extension)
-				case _ => throw new UnsupportedOperationException
-			}
-		}
-
+		val classPathResource = Option(getClass.getClassLoader.getResourceAsStream((defaultPath).toString))
+			.map(is => ClassPathResource(is, filePath.extension))
 		val resource = classPathResource.orElse(filePath.ifFile(path => FileResource(path.toFile)))
 		resource.map(_.success).getOrElse(s"file $filePath doesn't exist".failure)
 	}

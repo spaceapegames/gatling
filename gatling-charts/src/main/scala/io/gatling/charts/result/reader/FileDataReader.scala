@@ -26,10 +26,17 @@ import io.gatling.charts.result.reader.buffers.{ CountBuffer, RangeBuffer }
 import io.gatling.charts.result.reader.stats.StatsHelper
 import io.gatling.core.config.GatlingConfiguration.configuration
 import io.gatling.core.config.GatlingFiles.simulationLogDirectory
-import io.gatling.core.result.{ Group, GroupStatsPath, IntRangeVsTimePlot, IntVsTimePlot, RequestStatsPath, StatsPath }
+import io.gatling.core.result._
 import io.gatling.core.result.message.{ GroupMessageType, KO, OK, RequestMessageType, RunMessage, RunMessageType, ScenarioMessageType, Status }
 import io.gatling.core.result.reader.{ DataReader, GeneralStats }
 import io.gatling.core.util.DateHelper.parseTimestampString
+import io.gatling.core.result.Group
+import io.gatling.core.result.RequestStatsPath
+import scala.Some
+import io.gatling.core.result.IntRangeVsTimePlot
+import io.gatling.core.result.GroupStatsPath
+import io.gatling.core.result.IntVsTimePlot
+import io.gatling.core.result.message.RunMessage
 
 object FileDataReader {
 	val logStep = 100000
@@ -38,7 +45,7 @@ object FileDataReader {
 	val simulationFilesNamePattern = """.*\.log"""
 }
 
-class FileDataReader(runUuid: String) extends DataReader(runUuid) with Logging {
+class FileDataReader(runUuid: String) extends DataReader(runUuid) with GraphiteReader with Logging {
 
 	println("Parsing log file(s)...")
 
@@ -238,4 +245,9 @@ class FileDataReader(runUuid: String) extends DataReader(runUuid) with Logging {
 					IntVsTimePlot(math.round(count / step * 1000).toInt, responseTimes.higher)
 			}.sortBy(_.time)
 	}
+
+	def graphiteCpuStatistics(): Seq[Series[IntVsTimePlot]] = {
+		graphiteStatistics(configuration.charting.graphiteCpuTarget)
+	}
+
 }

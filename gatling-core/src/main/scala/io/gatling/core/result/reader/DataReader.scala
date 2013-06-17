@@ -16,8 +16,12 @@
 package io.gatling.core.result.reader
 
 import io.gatling.core.config.GatlingConfiguration.configuration
-import io.gatling.core.result.{ Group, IntRangeVsTimePlot, IntVsTimePlot, StatsPath }
+import io.gatling.core.result._
 import io.gatling.core.result.message.{ RunMessage, Status }
+import io.gatling.core.result.IntRangeVsTimePlot
+import io.gatling.core.result.Group
+import io.gatling.core.result.message.RunMessage
+import io.gatling.core.result.IntVsTimePlot
 
 object DataReader {
 	val NO_PLOT_MAGIC_VALUE = -1
@@ -41,4 +45,6 @@ abstract class DataReader(runUuid: String) {
 	def responseTimeGroupByExecutionStartDate(status: Status, requestName: Option[String] = None, group: Option[Group] = None): Seq[IntRangeVsTimePlot]
 	def latencyGroupByExecutionStartDate(status: Status, requestName: Option[String] = None, group: Option[Group] = None): Seq[IntRangeVsTimePlot]
 	def responseTimeAgainstGlobalNumberOfRequestsPerSec(status: Status, requestName: Option[String] = None, group: Option[Group] = None): Seq[IntVsTimePlot]
+	def graphiteCpuStatistics(): Seq[Series[IntVsTimePlot]]
+
 }

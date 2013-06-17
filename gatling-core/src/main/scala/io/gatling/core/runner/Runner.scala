@@ -71,6 +71,8 @@ class Runner(selection: Selection) extends AkkaDefaults with Logging {
 			terminatorLatch.await(configuration.core.timeOut.simulation, SECONDS)
 			println("Simulation finished.")
 
+			simulation.tearDown
+
 			(runMessage.runId, simulation)
 
 		} finally {

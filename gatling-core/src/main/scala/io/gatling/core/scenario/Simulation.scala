@@ -38,6 +38,10 @@ abstract class Simulation {
 		new SetUp(this) with Protocols with Assertions
 	}
 
+	def tearDown {
+
+	}
+
 	class SetUp(val simulation: Simulation)
 	trait Protocols { this: SetUp =>
 		def protocols(protocol: Protocol, protocols: Protocol*) = {

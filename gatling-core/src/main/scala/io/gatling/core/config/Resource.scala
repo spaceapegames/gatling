@@ -16,7 +16,6 @@
 package io.gatling.core.config
 
 import java.io.{ File => JFile, InputStream }
-import java.net.URL
 
 import scala.reflect.io.File
 
@@ -32,10 +31,7 @@ case class FileResource(file: File) extends Resource {
 	def jfile = file.jfile
 }
 
-case class ClassPathResource(url: URL, extension: String) extends Resource {
-
-	def inputStream = url.openStream
-
+case class ClassPathResource(inputStream: InputStream, extension: String) extends Resource {
 	def jfile = {
 		val tempFile = File.makeTemp("gatling", "." + extension).jfile
 		copyInputStreamToFile(inputStream, tempFile)
