@@ -29,18 +29,12 @@ package object validation {
 
 	implicit class ValidationList[T](val validations: List[Validation[T]]) extends AnyVal {
 		def sequence: Validation[List[T]] = {
-			null
-			/*
-			@tailrec
-			def sequenceRec(validations: List[Validation[T]], successes: List[T]): Validation[List[T]] = validations match {
-				case Nil => successes.success
-				case head :: tail => head match {
-					case failure @ Failure(_) => failure.asInstanceOf[Validation[List[T]]]
-					case Success(entry) => sequenceRec(tail, entry :: successes)
-				}
-			}
-			sequenceRec(validations, Nil).map(_.reverse)
-			*/
+
+			val t: List[T] = validations.map(_ match {
+				case Success(v) => v
+			})
+
+			Success(t).asInstanceOf[Validation[List[T]]]
 		}
 	}
 }

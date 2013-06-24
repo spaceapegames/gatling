@@ -31,7 +31,22 @@
 			<directory>src/main/assembly/assembly-structure/bin</directory>
 			<filtered>true</filtered>
 			<fileMode>0755</fileMode>
+            <lineEnding>unix</lineEnding>
 			<outputDirectory>/bin/</outputDirectory>
 		</fileSet>
+        <fileSet>
+            <directory>../gatling-panda/src/test/resources/data</directory>
+            <outputDirectory>/user-files/data</outputDirectory>
+            <includes>
+                <include>*.csv</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>../gatling-panda/src/test/resources/data/basic</directory>
+            <outputDirectory>/user-files/simulations</outputDirectory>
+            <excludes>
+                <exclude>**/.gitkeep</exclude>
+            </excludes>
+        </fileSet>
 	</fileSets>
 </assembly>

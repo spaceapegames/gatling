@@ -17,6 +17,7 @@
 		<module>gatling-bundle</module>
 		<module>gatling-maven-plugin</module>
 		<module>gatling-metrics</module>
+        <module>gatling-panda</module>
 	</modules>
 
 	<licenses>
