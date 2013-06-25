@@ -1,1 +1,1 @@
-rsync -az -v --chmod=go+r --progress -e "ssh -i c:\keys\andy.pem" target/gatling-bundle-2.0.0-SPACEAPE-bundle.zip andy@loadtest-panda-2.use1a.apelabs.net:~
+rsync -az -v --chmod=go+r --progress -e "ssh -i c:\keys\andy.pem" target/gatling-bundle-2.0.0-SPACEAPE-bundle.zip andy@loadtest-panda-game-service-4.use1a.apelabs.net:~

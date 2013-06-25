@@ -18,7 +18,7 @@ import com.spaceape.panda.proto.Audits.{ AuditChangeType, BaseAuditChange, Updat
 class PollAction(requestName: Expression[String], next: ActorRef)(implicit repoFactory: RepositoryFactory) extends SocketAction(requestName, next) {
 
 	def buildRequest(requestName: String, session: Session): SendMessage = {
-		val req = BaseReq.newBuilder().setId(1).setAuthenticationTicket(getTicketFromSession(session))
+		val req = createBaseReqBuilder(session)
 		req.setType(ReqRepType.AuditChange)
 
 		val auditChange = UpdateActiveTimeAuditChange.newBuilder().build()

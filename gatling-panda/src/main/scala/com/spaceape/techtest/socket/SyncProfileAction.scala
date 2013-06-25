@@ -21,6 +21,9 @@ import com.spaceape.techtest.socket.SendMessage
 import scala.Some
 import io.gatling.core.validation.{ Success, Validation }
 import com.spaceape.game.security.TicketGenerator
+import com.spaceape.common.core.rest.Json
+import play.api.libs.json.JsObject
+import com.spaceape.common.core.compress.Compression
 
 /**
  * Space Ape Games
@@ -28,9 +31,8 @@ import com.spaceape.game.security.TicketGenerator
 class SyncProfileAction(requestName: Expression[String], next: ActorRef)(implicit repoFactory: RepositoryFactory) extends SocketAction(requestName, next) with TicketGenerator {
 
 	def buildRequest(requestName: String, session: Session): SendMessage = {
-		val req = BaseReq.newBuilder().
+		val req =createBaseReqBuilder(session).
 			setType(ReqRepType.SyncProfile).
-			setId(1).
 			setReqSyncProfile(ReqSyncProfile.newBuilder()).
 			setAuthenticationTicket(getTicketFromSession(session)).
 			build
@@ -47,15 +49,21 @@ class SyncProfileAction(requestName: Expression[String], next: ActorRef)(implici
 				case Some(response) =>
 					val baseResp = BaseResp.parseFrom(response.payload)
 					if (baseResp.getStatus == ReqRepStatus.OK) {
-						session = session.set("synced", true)
+						session = session.set(SessionKey.Synced, true)
 					} else {
-						session = session.set("synced", false)
+						session = session.set(SessionKey.Synced, false)
 						status = KO
 						if (baseResp.hasErrorMessage) {
 							message = Some(baseResp.getErrorMessage)
 						}
 					}
-				case None =>
+          if (baseResp.getRespSyncProfile.hasGameContent){
+            val rawJson = Json.parse[JsObject](Compression.uncompress(baseResp.getRespSyncProfile.getGameContent.getRawJSON))
+            val version = (rawJson \ "version").as[String]
+            session = session.set(SessionKey.GameContentVersion,version)
+          }
+
+        case None =>
 			}
 			DataWriter.tell(RequestMessage(session.scenarioName, session.userId, session.groupStack, s.request.requestName,
 				s.requestSendingEndTime, s.requestSendingEndTime, s.receivingEndTime, s.receivingEndTime, status, s.message))

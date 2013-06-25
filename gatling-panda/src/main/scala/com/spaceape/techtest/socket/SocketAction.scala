@@ -4,7 +4,7 @@ import io.gatling.core.session._
 import com.spaceape.techtest._
 import akka.actor.ActorRef
 import io.gatling.core.action.Interruptable
-import com.spaceape.panda.proto.Commands.{ BaseResp, ClientServerMessageHeader }
+import com.spaceape.panda.proto.Commands.{ReqRepType, BaseReq, BaseResp, ClientServerMessageHeader}
 import com.spaceape.http.client.header
 import com.redis.S
 import io.gatling.core.result.message.{ KO, RequestMessage, Status }
@@ -78,6 +78,14 @@ abstract class SocketAction(val requestName: Expression[String], val next: Actor
 				next ! session
 		}
 	}
+
+  def createBaseReqBuilder(session: Session) = {
+    val req = BaseReq.newBuilder().setId(1).setAuthenticationTicket(getTicketFromSession(session))
+    if (session.contains(SessionKey.GameContentVersion)){
+      req.setContentVersion(session(SessionKey.GameContentVersion).as[String])
+    }
+    req
+  }
 
 	override def receive = {
 

@@ -19,11 +19,9 @@ import scala.collection.JavaConversions._
 class PlayersToAttackAction(requestName: Expression[String], next: ActorRef)(implicit repoFactory: RepositoryFactory) extends SocketAction(requestName, next) with TicketGenerator {
 
 	def buildRequest(requestName: String, session: Session): SendMessage = {
-		val req = BaseReq.newBuilder().
+		val req = createBaseReqBuilder(session).
 			setType(ReqRepType.PlayersToAttack).
-			setId(1).
 			setReqPlayersToAttack(ReqPlayersToAttack.newBuilder()).
-			setAuthenticationTicket(getTicketFromSession(session)).
 			build
 		new SendMessage(requestName, session, System.currentTimeMillis(), buildHeader("playersToAttack"), req.toByteArray)
 	}

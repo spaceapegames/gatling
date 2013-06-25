@@ -20,11 +20,9 @@ class ReleasePlayersAfterAttackAction(requestName: Expression[String], next: Act
 	def buildRequest(requestName: String, session: Session): SendMessage = {
 		(session("defenderToRelease").asOption[String]) match {
 			case Some(defender) =>
-				val req = BaseReq.newBuilder().
+				val req = createBaseReqBuilder(session).
 					setType(ReqRepType.DebugRemoveCloak).
-					setId(1).
 					setReqDebugRemoveCloak(ReqDebugRemoveCloak.newBuilder().setClide(defender)).
-					setAuthenticationTicket(getTicketFromSession(session)).
 					build
 				new SendMessage(requestName, session, System.currentTimeMillis(), buildHeader("releasecloak"), req.toByteArray)
 			case None => null

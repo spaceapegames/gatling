@@ -9,6 +9,9 @@ import com.spaceape.panda.proto.Commands._
 import com.spaceape.panda.proto.Audits.{ AuditChangeType, BaseAuditChange, UpdateActiveTimeAuditChange }
 import io.gatling.core.validation.Validation
 import com.spaceape.techtest.{ ReqRepProcessor, RepositoryFactory }
+import com.spaceape.common.core.compress.Compression
+import com.spaceape.common.core.rest.Json
+import play.api.libs.json.JsObject
 
 /**
  * Space Ape Games
@@ -79,7 +82,13 @@ class LoginAndPollSimulation extends Simulation {
 		}
 
 		def processResp(res: BaseResp, session: Session) = {
-			session
+      var newSession = session
+      if (res.getRespSyncProfile.hasGameContent){
+        val rawJson = Json.parse[JsObject](Compression.uncompress(res.getRespSyncProfile.getGameContent.getRawJSON))
+        val version = (rawJson \ "version").as[String]
+        newSession = session.set("GameContentVersion",version)
+      }
+			newSession
 		}
 	}
 
