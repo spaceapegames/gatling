@@ -43,8 +43,8 @@ object PrepMatchingRun {
 				/*
         val player = prodFactory.gamePlayerRepository.getPlayer(profile.clide,Set(ProfileField,WorldField)).get
         if (player.getWorld != null){
-          player.topupToCapSolid()
-          player.topupToCapLiquid()
+          player.fillSolid()
+          player.fillLiquid()
           player.getProfile.removeShield()
         }
         */

@@ -9,41 +9,10 @@ import com.spaceape.http.client.header
 import com.redis.S
 import io.gatling.core.result.message.{ KO, RequestMessage, Status }
 import io.gatling.core.util.StringHelper._
-import io.gatling.core.session.Session
-import com.spaceape.http.client.header
 import io.gatling.core.result.writer.DataWriter
-import io.gatling.http.response
-import io.gatling.http
-import io.gatling.core.validation.{ Success, Failure }
 import io.gatling.core.session.Session
 import io.gatling.core.validation.Success
-import com.spaceape.http.client.header
-import com.spaceape.techtest.socket.SendComplete
 import io.gatling.core.result.message.RequestMessage
-import com.spaceape.techtest.socket.SendMessage
-import com.spaceape.techtest.socket.StopClient
-import io.gatling.core.validation.Failure
-import io.gatling.core.session.Session
-import io.gatling.core.validation.Success
-import com.spaceape.http.client.header
-import com.spaceape.techtest.socket.SendComplete
-import io.gatling.core.result.message.RequestMessage
-import com.spaceape.techtest.socket.StopClient
-import io.gatling.core.validation.Failure
-import io.gatling.core.session.Session
-import io.gatling.core.validation.Success
-import com.spaceape.http.client.header
-import io.gatling.core.result.message.RequestMessage
-import com.spaceape.techtest.socket.SendComplete
-import com.spaceape.techtest.socket.SendMessage
-import com.spaceape.techtest.socket.StopClient
-import io.gatling.core.validation.Failure
-import io.gatling.core.session.Session
-import io.gatling.core.validation.Success
-import com.spaceape.http.client.header
-import com.spaceape.techtest.socket.SendComplete
-import io.gatling.core.result.message.RequestMessage
-import com.spaceape.techtest.socket.SendMessage
 import io.gatling.core.validation.Failure
 import com.spaceape.game.security.TicketGenerator
 
@@ -71,7 +40,7 @@ abstract class SocketAction(val requestName: Expression[String], val next: Actor
 				if (sendMessage == null) {
 					next ! session
 				} else {
-					session("socketClientActor").as[ActorRef] ! sendMessage
+          session(SessionKey.SocketClient).as[SocketClientThread].sendMessage(sendMessage,self)
 				}
 			case Failure(msg) =>
 				logger.error(msg)
@@ -81,8 +50,11 @@ abstract class SocketAction(val requestName: Expression[String], val next: Actor
 
   def createBaseReqBuilder(session: Session) = {
     val req = BaseReq.newBuilder().setId(1).setAuthenticationTicket(getTicketFromSession(session))
-    if (session.contains(SessionKey.GameContentVersion)){
-      req.setContentVersion(session(SessionKey.GameContentVersion).as[String])
+    session(SessionKey.GameContentVersion).asOption[String] match{
+      case Some(version) =>
+        req.setContentVersion(version)
+      case None =>
+        //req.setContentVersion("18")
     }
     req
   }
@@ -152,7 +124,7 @@ class SocketStop(val requestName: Expression[String], val next: ActorRef)(implic
 	 * @return Nothing
 	 */
 	def execute(session: Session) {
-		session("socketClientActor").as[ActorRef] ! new StopClient
+		session(SessionKey.SocketClient).as[SocketClientThread].close()
 		next ! session
 	}
 }

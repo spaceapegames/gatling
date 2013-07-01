@@ -34,7 +34,29 @@ object SocketActionBuilder {
 		}
 	}
 
-	def syncProfile(requestName: Expression[String])(implicit repoFactory: RepositoryFactory) = {
+  def fetchDummyData(requestName: Expression[String])(implicit repoFactory: RepositoryFactory) = {
+    val ping = ClientServerMessageHeader.newBuilder().setService("dummy").setTokenid("1").build()
+
+    new ActionBuilder {
+      def build(next: ActorRef): ActorRef = {
+        implicit val ec = repoFactory.ec
+        system.actorOf(Props(new DummyDataAction(requestName, ping, next)))
+      }
+    }
+  }
+
+  def fetchDummyFutureData(requestName: Expression[String])(implicit repoFactory: RepositoryFactory) = {
+    val ping = ClientServerMessageHeader.newBuilder().setService("dummyfuture").setTokenid("1").build()
+
+    new ActionBuilder {
+      def build(next: ActorRef): ActorRef = {
+        implicit val ec = repoFactory.ec
+        system.actorOf(Props(new DummyDataAction(requestName, ping, next)))
+      }
+    }
+  }
+
+  def syncProfile(requestName: Expression[String])(implicit repoFactory: RepositoryFactory) = {
 		new ActionBuilder {
 			def build(next: ActorRef): ActorRef = {
 				system.actorOf(Props(new SyncProfileAction(requestName, next)))
