@@ -4,7 +4,6 @@ import io.gatling.core.scenario.Simulation
 import io.gatling.http.Predef._
 import io.gatling.core.Predef._
 import scala.concurrent.duration._
-import scala.language._
 
 class RedisMakingSimulation extends Simulation {
 
