@@ -34,19 +34,22 @@ class SyncProfileAction(requestName: Expression[String], next: ActorRef)(implici
 		val req =createBaseReqBuilder(session).
 			setType(ReqRepType.SyncProfile).
 			setReqSyncProfile(ReqSyncProfile.newBuilder()).
-			setAuthenticationTicket(getTicketFromSession(session)).
-			build
-		new SendMessage(requestName, session, System.currentTimeMillis(), buildHeader("syncprofile"), req.toByteArray)
+			build.toByteArray
+		new SendMessage(requestName, session, System.currentTimeMillis(), buildHeader("syncprofile"), req)
 	}
 
 	def processResponse(s: SendComplete): Session =
-		{
+  {
 			var session = s.request.session
 			var status = s.status
 			var message = s.message
+      var finishTime = s.receivingEndTime
 
 			(s.response) match {
 				case Some(response) =>
+          finishTime = response.finishReadTime
+          session = session.set(SessionKey.Synced, true)
+
 					val baseResp = BaseResp.parseFrom(response.payload)
 					if (baseResp.getStatus == ReqRepStatus.OK) {
 						session = session.set(SessionKey.Synced, true)
@@ -57,16 +60,32 @@ class SyncProfileAction(requestName: Expression[String], next: ActorRef)(implici
 							message = Some(baseResp.getErrorMessage)
 						}
 					}
+
+        /*
           if (baseResp.getRespSyncProfile.hasGameContent){
-            val rawJson = Json.parse[JsObject](Compression.uncompress(baseResp.getRespSyncProfile.getGameContent.getRawJSON))
-            val version = (rawJson \ "version").as[String]
-            session = session.set(SessionKey.GameContentVersion,version)
+            try{
+              val rawJson = Json.parse[JsObject](Compression.uncompress(baseResp.getRespSyncProfile.getGameContent.getRawJSON))
+
+              if (rawJson != null){
+                val version = (rawJson \ "version").as[String]
+                session = session.set(SessionKey.GameContentVersion,version)
+              }
+            }catch{
+              case err: Throwable => //
+            }
           }
+          */
 
         case None =>
 			}
-			DataWriter.tell(RequestMessage(session.scenarioName, session.userId, session.groupStack, s.request.requestName,
-				s.requestSendingEndTime, s.requestSendingEndTime, s.receivingEndTime, s.receivingEndTime, status, s.message))
+
+      DataWriter.tell(RequestMessage(session.scenarioName, session.userId, session.groupStack, s.request.requestName,
+				s.requestSendingEndTime, s.requestSendingEndTime, s.receivingEndTime,finishTime, status, s.message))
+
+      if (finishTime > s.requestSendingEndTime){
+        DataWriter.tell(RequestMessage(session.scenarioName+"READTIME", session.userId, session.groupStack, s.request.requestName,
+          s.receivingEndTime, s.receivingEndTime,finishTime,finishTime, status, s.message))
+      }
 
 			session
 		}

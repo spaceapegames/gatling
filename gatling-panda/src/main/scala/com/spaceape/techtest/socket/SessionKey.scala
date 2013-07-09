@@ -6,4 +6,5 @@ package com.spaceape.techtest.socket
 object SessionKey {
   val Synced = "synced"
   val GameContentVersion = "GameContentVersion"
+  val SocketClient = "SocketClient"
 }

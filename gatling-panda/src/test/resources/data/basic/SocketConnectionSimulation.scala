@@ -13,7 +13,7 @@ import akka.actor.ActorRef
 import io.gatling.core.session.Session
 import com.spaceape.techtest.socket.SocketActionBuilder
 import SocketActionBuilder._
-
+import com.spaceape.techtest.Predef._
 /**
  * Space Ape Games
  */
@@ -21,9 +21,10 @@ class SocketConnectionSimulation extends Simulation {
 
 	implicit val repositoryFactory = new RepositoryFactory
 
-	repositoryFactory.socketGateway = "localhost"
+//	repositoryFactory.socketGateway = "localhost"
+  repositoryFactory.socketGateway = "loadtest-socket-gateway-1.use1a.apelabs.net"
 
-	val clides = csv("test-clides-loadtest.csv").circular
+  val clides = csv("test-clides-loadtest.csv").circular
 
 	val scn = scenario("Socket Gateway")
 		.feed(clides)
@@ -49,10 +50,6 @@ class SocketConnectionSimulation extends Simulation {
 	//assertThat(details("request_9").requestsPerSec.greaterThan(10))
 	override def tearDown {
 		repositoryFactory.shutdown
-	}
-
-	def isConnected(session: Session): Validation[Boolean] = {
-		session("socketClientActor").asOption[ActorRef] != None
 	}
 
 }

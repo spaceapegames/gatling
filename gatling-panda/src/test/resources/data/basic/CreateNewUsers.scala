@@ -11,7 +11,7 @@ import akka.actor.ActorRef
 import io.gatling.core.session.Session
 import com.spaceape.techtest.socket.SocketActionBuilder
 import SocketActionBuilder._
-
+import com.spaceape.techtest.Predef._
 /**
  * Space Ape Games
  */
@@ -45,10 +45,6 @@ class CreateNewUsers extends Simulation {
 	//assertThat(details("request_9").requestsPerSec.greaterThan(10))
 	override def tearDown {
 		repositoryFactory.shutdown
-	}
-
-	def isConnected(session: Session): Validation[Boolean] = {
-		session("socketClientActor").asOption[ActorRef] != None
 	}
 
 	def isSynced(session: Session): Validation[Boolean] = {

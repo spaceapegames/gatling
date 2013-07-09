@@ -15,42 +15,42 @@ import io.gatling.core.util.StringHelper._
 import io.gatling.core.session.Session
 import io.gatling.core.result.writer.DataWriter
 import com.spaceape.http.client.header
-import com.spaceape.techtest.RepositoryFactory
+import com.spaceape.techtest.{TimeoutFuture, RepositoryFactory}
 import org.jboss.netty.handler.codec.frame.{ FrameDecoder, LengthFieldBasedFrameDecoder }
+import java.net.Socket
+import java.io.{BufferedOutputStream, BufferedInputStream, InputStreamReader, BufferedReader}
+import scala.util.{Failure, Success}
 
 class SocketConnectionAction(val requestName: Expression[String], val next: ActorRef)(implicit repoFactory: RepositoryFactory) extends Interruptable {
+  implicit val ec = repoFactory.ec
 
 	def execute(session: Session) {
 		// Start the connection attempt.
 		def connect(requestName: String) {
 			val startDate = System.currentTimeMillis()
 
-			val future = repoFactory.socketGatewayBootstrap.connect(new InetSocketAddress(repoFactory.socketGateway, repoFactory.socketGatewayPort));
-			future.addListener(new ChannelFutureListener {
-				def operationComplete(future: ChannelFuture) {
+      val future = TimeoutFuture(10 seconds){
+        new SocketClientThread(session("clide").as[String])
+      }
 
-					var nextSession = session
-					var status: Status = KO
-					var message: Option[String] = None
+      future onComplete {
+        case Success(socketClient) =>
+          DataWriter.tell(RequestMessage(session.scenarioName, session.userId, session.groupStack, requestName,
+            startDate, startDate, System.currentTimeMillis(), System.currentTimeMillis(),
+            OK, None))
 
-					if (future.getCause != null) {
-						message = Some(future.getCause().getMessage)
-					}
+          val newSession = session.set(SessionKey.SocketClient,socketClient)
 
-					if (future.isSuccess) {
-						status = OK
-						val actor = system.actorOf(Props(new SocketClientActor(future.getChannel, session("clide").as[String])))
-						nextSession = session.set("socketClientActor", actor)
-						actor ! new ChannelConnected()
-					}
+          next ! newSession
 
-					DataWriter.tell(RequestMessage(session.scenarioName, session.userId, session.groupStack, requestName,
-						startDate, startDate, System.currentTimeMillis(), System.currentTimeMillis(),
-						status, message))
 
-					next ! nextSession
-				}
-			})
+        case Failure(exception) =>
+          DataWriter.tell(RequestMessage(session.scenarioName, session.userId, session.groupStack, requestName,
+            startDate, startDate, System.currentTimeMillis(), System.currentTimeMillis(),
+            KO, Some(exception.getMessage)))
+
+          next ! session
+      }
 		}
 
 		val execution = for {
@@ -61,27 +61,11 @@ class SocketConnectionAction(val requestName: Expression[String], val next: Acto
 	}
 }
 
-case class ChannelConnected() {
-
-}
-
-case class TimeoutCheck() {
-
-}
-
-case class StopClient() {
-
-}
-
-case class ChannelError(message: String) {
-
-}
-
 case class SendMessage(requestName: String, session: Session, sendTime: Long, header: ClientServerMessageHeader, payload: Array[Byte]) {
 
 }
 
-case class ReceivedMessage(receivingEndTime: Long, header: ServerClientMessageHeader, payload: Array[Byte]) {
+case class ReceivedMessage(receivingEndTime: Long,finishReadTime: Long, header: ServerClientMessageHeader, payload: Array[Byte]) {
 
 }
 
@@ -89,121 +73,82 @@ case class SendComplete(status: Status, requestSendingEndTime: Long, receivingEn
 
 }
 
-class SocketClientActor(channel: Channel, clide: String)(implicit repoFactory: RepositoryFactory) extends BaseActor {
+class SocketClientThread(clide: String)(implicit repoFactory: RepositoryFactory) {
+  implicit val ec = repoFactory.ec
 
-	implicit val ec = repoFactory.ec
+  val socket = new Socket(repoFactory.socketGateway,repoFactory.socketGatewayPort)
+  val in = new BufferedInputStream(socket.getInputStream())
+  val output = new BufferedOutputStream(socket.getOutputStream())
+  val connected = true
+  val FRAME_LENGTH_SIZE = 4
+  val HEADER_LENGTH_SIZE = 4
 
-	var startTime: Long = 0
-	var requestSendingEndTime: Long = 0
-	var responseReceivingTime: Long = 0
-	var finishTime: Long = 0
-	var timeout = 10 seconds
-	var handler = new SocketClientHandler(self)
-	var sendMessage: SendMessage = null
-	var sendingActor: ActorRef = null
+  val frameSizeBytes = new Array[Byte](FRAME_LENGTH_SIZE)
+  val headerSizeBytes = new Array[Byte](HEADER_LENGTH_SIZE)
 
-	def receive = {
-		case c: ChannelConnected =>
-			channel.getPipeline.addLast("client handler", handler)
-		case s: SendMessage =>
-			//println("sending " + s.header.getTokenid)
-			sendingActor = sender
-			sendMessage = s
-			if (channel.isOpen) {
-				startTime = System.currentTimeMillis()
-				SocketGatewayClientEncoder.encode(channel, s.header.toByteArray, s.payload)
-				requestSendingEndTime = System.currentTimeMillis()
-				context.system.scheduler.scheduleOnce(timeout, self, new TimeoutCheck())
-			} else {
-				sendingActor ! new SendComplete(KO, System.currentTimeMillis(), System.currentTimeMillis(), s, None, Some("Not connected"))
-			}
-		case r: ReceivedMessage =>
-			startTime = 0
-			//println("received " + r.header.getTokenid)
-			sendingActor ! new SendComplete(OK, requestSendingEndTime, r.receivingEndTime, sendMessage, Some(r), None)
-		case t: TimeoutCheck =>
-			if (startTime > 0 && (System.currentTimeMillis() > (startTime + timeout.toMillis))) {
-				sendingActor ! new SendComplete(KO, requestSendingEndTime, System.currentTimeMillis(), sendMessage, None, Some("TIMEOUT"))
-				startTime = 0
-			}
-		case e: ChannelError =>
-			if (startTime > 0 && (System.currentTimeMillis() > (startTime + timeout.toMillis))) {
-				sendingActor ! new SendComplete(KO, requestSendingEndTime, System.currentTimeMillis(), sendMessage, None, Some("ERROR:" + e.message))
-				startTime = 0
-			}
-		case s: StopClient =>
-			channel.close()
-	}
+  private def readComplete(buffer: Array[Byte]) {
+    var read = 0
+    while(read != buffer.length){
+      val readSize = in.read(buffer,read,buffer.length-read)
+      if (readSize == -1){
+        throw new Exception("input stream closed")
+      }
 
-	case class SocketResponseWrapper(requestName: String, startTime: Long, requestSendingEndTime: Long, responseReceivingTime: Long, finishTime: Long) {
+      read += readSize
+    }
+  }
 
-	}
+  def sendMessage(s: SendMessage, callback: ActorRef){
 
-	class SocketClientHandler(socketClientActor: ActorRef) extends FrameDecoder {
+    val startTime = System.currentTimeMillis()
+    val future = TimeoutFuture(10 seconds){
+      val startSendStartedDate = System.currentTimeMillis()
+      output.write(SocketGatewayClientEncoder.encode(s.header.toByteArray,s.payload))
+      output.flush()
+      val startSendCompleteDate = System.currentTimeMillis()
 
-		def decode(ctx: ChannelHandlerContext, channel: Channel, b: ChannelBuffer): AnyRef = {
+      readComplete(frameSizeBytes)
+      val receivingTime = System.currentTimeMillis()
+      val nextFrameSize = IOUtil.byteArrayToInt(frameSizeBytes)
+      readComplete(headerSizeBytes)
+      val headerSize = IOUtil.byteArrayToInt(headerSizeBytes)
+      val payloadSize = nextFrameSize - headerSize - HEADER_LENGTH_SIZE
+      val headerBuffer = new Array[Byte](headerSize)
+      val payloadBuffer = new Array[Byte](payloadSize)
+      readComplete(headerBuffer)
+      readComplete(payloadBuffer)
+      val receiveCompleteTime = System.currentTimeMillis()
 
-			if (nextFrameSize == -1)
-				readNextFrameSize(b)
+      val header = ServerClientMessageHeader.parseFrom(headerBuffer)
 
-			if (nextFrameSize > 0 && b.readableBytes() >= nextFrameSize) {
-				//read the header size
-				b.readBytes(headerSizeBytes, 0, HEADER_LENGTH_SIZE)
-				val headerSize = IOUtil.byteArrayToInt(headerSizeBytes)
-				val payloadSize = nextFrameSize - headerSize - HEADER_LENGTH_SIZE
-				val headerBuffer = new Array[Byte](headerSize)
-				val payloadBuffer = new Array[Byte](payloadSize)
-				b.readBytes(headerBuffer, 0, headerSize)
-				val header = ServerClientMessageHeader.parseFrom(headerBuffer)
-				b.readBytes(payloadBuffer, 0, payloadSize)
+      SendComplete(OK,startSendStartedDate,startSendCompleteDate,s,Some(ReceivedMessage(receivingTime,receiveCompleteTime,header,payloadBuffer)),None)
+    }
 
-				val msg = new ReceivedMessage(receivingTime, header, payloadBuffer)
+    future onComplete {
+      case Success(sendComplete) =>
+        callback ! sendComplete
+      case Failure(exception) =>
+        callback ! SendComplete(KO,startTime,startTime,s,None,Some(exception.getMessage))
+    }
+  }
 
-				nextFrameSize = -1
-
-				socketClientActor ! msg
-
-				return msg
-			} else {
-				return null
-			}
-
-		}
-
-		override def exceptionCaught(ctx: ChannelHandlerContext, e: ExceptionEvent) {
-			e.getChannel().close();
-			socketClientActor ! ChannelError(e.getCause.getMessage)
-		}
-
-		val FRAME_LENGTH_SIZE = 4
-		val HEADER_LENGTH_SIZE = 4
-
-		val frameSizeBytes = new Array[Byte](FRAME_LENGTH_SIZE)
-		val headerSizeBytes = new Array[Byte](HEADER_LENGTH_SIZE)
-		var nextFrameSize = -1
-		var receivingTime: Long = 0
-
-		def readNextFrameSize(b: ChannelBuffer) {
-			if (b.readable()) {
-				b.readBytes(frameSizeBytes, 0, FRAME_LENGTH_SIZE)
-				nextFrameSize = IOUtil.byteArrayToInt(frameSizeBytes)
-				receivingTime = System.currentTimeMillis()
-			}
-		}
-
-	}
+  def close(){
+    in.close()
+    output.close()
+    socket.close()
+  }
 }
 
 object SocketGatewayClientEncoder {
 	val FRAME_LENGTH_SIZE = 4;
 
-	def encode(c: Channel, header: Array[Byte], payload: Array[Byte]) {
+	def encode(header: Array[Byte], payload: Array[Byte]) = {
 		val headerLenData = IOUtil.intToByteArray(header.size)
 		val buff = ChannelBuffers.buffer(FRAME_LENGTH_SIZE + headerLenData.size + header.size + payload.size)
 		buff.writeBytes(IOUtil.intToByteArray(headerLenData.size + header.size + payload.size))
 		buff.writeBytes(headerLenData);
 		buff.writeBytes(header);
 		buff.writeBytes(payload);
-		c.write(buff)
+		buff.array()
 	}
 }
