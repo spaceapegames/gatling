@@ -8,31 +8,31 @@ import io.gatling.core.session.Session
 import io.gatling.core.Predef.Session
 import com.spaceape.game.security.{AuthenticationConfiguration, TicketGenerator}
 
-class DynamoMatchSimulation extends Simulation {
+class DynamoReadSimulation extends Simulation {
   val clides = csv("test-clides-loadtest.csv").circular
 
   val httpProtocol = http
     .baseURL("http://loadtest-panda-game-service-6.use1a.apelabs.net:8024")
     .shareConnections
 
-  val scn = scenario("DynamoMatchSimulation")
+  val scn = scenario("DynamoSimulation")
     .feed(clides)
     .exec(
-    http("making")
-      .post("/v1/match/realmaking")
+    http("read rate")
+//      .post("/v1/loadtest/dynamo/findOne")
+      .post("/v1/loadtest/dynamo/ping")
       .byteArrayBody(session => getByteArrayBody(session))
   )
 
-  setUp(scn.inject(constantRate(2 usersPerSec) during (1 seconds))).protocols(httpProtocol)
-  //  setUp(scn.inject(rampRate(1000 usersPerSec) to (4000 usersPerSec) during (10 seconds), constantRate(4000 usersPerSec) during (15 seconds))).protocols(httpProtocol)
+  //setUp(scn.inject(constantRate(10 usersPerSec) during (1 seconds))).protocols(httpProtocol)
+  setUp(scn.inject(rampRate(100 usersPerSec) to (500 usersPerSec) during (10 seconds), constantRate(500 usersPerSec) during (15 seconds))).protocols(httpProtocol)
+  //setUp(scn.inject(rampRate(100 usersPerSec) to (300 usersPerSec) during (10 seconds), constantRate(300 usersPerSec) during (15 seconds))).protocols(httpProtocol)
 
   val getByteArrayBody = (session: Session) => {
-//    val ticket = getTicketFromSession(session)
-//    val req = ReqPlayersToAttack.newBuilder().build()
-//    val baseReq = BaseReq.newBuilder().setId(0).setReqPlayersToAttack(req).setType(ReqRepType.PlayersToAttack).setAuthenticationTicket(ticket).build()
-//    baseReq.toByteArray
-    session("clide").as[String].getBytes
+//    session("clide").as[String].getBytes
+    "http://loadtest-panda-game-service-5.use1a.apelabs.net:8024/v1/loadtest/dynamo/load".getBytes
   }
+
 
   def getTicketFromSession(session: Session): String = {
     session("ticket").asOption[String] match {

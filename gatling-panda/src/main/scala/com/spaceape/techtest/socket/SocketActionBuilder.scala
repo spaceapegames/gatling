@@ -61,7 +61,7 @@ object SocketActionBuilder {
 	def findPlayersToAttack(requestName: Expression[String])(implicit repoFactory: RepositoryFactory) = {
 		new ActionBuilder {
 			def build(next: ActorRef): ActorRef = {
-				system.actorOf(Props(new PlayersToAttackAction(requestName, next)))
+          system.actorOf(Props(new PlayersToAttackAction(requestName, next)))
 			}
 		}
 	}
