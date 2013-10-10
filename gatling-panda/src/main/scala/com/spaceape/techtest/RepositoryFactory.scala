@@ -11,7 +11,7 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory
 import org.jboss.netty.channel.{ SimpleChannelHandler, Channels, ChannelPipelineFactory }
 import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder
 import com.spaceape.betsnap.future.FutureService
-import java.nio.channels.{AsynchronousChannelGroup, AsynchronousSocketChannel}
+import java.nio.channels.{ AsynchronousChannelGroup, AsynchronousSocketChannel }
 
 /**
  * Space Ape Games
@@ -25,14 +25,13 @@ class RepositoryFactory {
 	var max_message_size = 200000
 	val executorService = Executors.newCachedThreadPool()
 	implicit val ec = ExecutionContext.fromExecutorService(executorService)
-  val futureService = new FutureService()
+	val futureService = new FutureService()
 	val client = new AsyncHttpClient(HttpClient.defaultAhcConfig)
 	system.registerOnTermination(client.close)
-  val asyncChannelGroup = AsynchronousChannelGroup.withCachedThreadPool(executorService, 100);
-  val asyncSocketClient = AsynchronousSocketChannel.open(asyncChannelGroup);
+	val asyncChannelGroup = AsynchronousChannelGroup.withCachedThreadPool(executorService, 100);
+	val asyncSocketClient = AsynchronousSocketChannel.open(asyncChannelGroup);
 
 	val authConfig: AuthenticationConfiguration = new AuthenticationConfiguration
-
 
 	def shutdown() {
 		// Shut down thread pools to exit.

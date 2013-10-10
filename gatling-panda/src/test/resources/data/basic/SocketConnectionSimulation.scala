@@ -21,10 +21,10 @@ class SocketConnectionSimulation extends Simulation {
 
 	implicit val repositoryFactory = new RepositoryFactory
 
-//	repositoryFactory.socketGateway = "localhost"
-  repositoryFactory.socketGateway = "loadtest-socket-gateway-1.use1a.apelabs.net"
+	//	repositoryFactory.socketGateway = "localhost"
+	repositoryFactory.socketGateway = "loadtest-socket-gateway-1.use1a.apelabs.net"
 
-  val clides = csv("test-clides-loadtest.csv").circular
+	val clides = csv("test-clides-loadtest.csv").circular
 
 	val scn = scenario("Socket Gateway")
 		.feed(clides)

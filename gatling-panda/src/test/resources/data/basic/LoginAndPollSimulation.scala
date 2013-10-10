@@ -82,12 +82,12 @@ class LoginAndPollSimulation extends Simulation {
 		}
 
 		def processResp(res: BaseResp, session: Session) = {
-      var newSession = session
-      if (res.getRespSyncProfile.hasGameContent){
-        val rawJson = Json.parse[JsObject](Compression.uncompress(res.getRespSyncProfile.getGameContent.getRawJSON))
-        val version = (rawJson \ "version").as[String]
-        newSession = session.set("GameContentVersion",version)
-      }
+			var newSession = session
+			if (res.getRespSyncProfile.hasGameContent) {
+				val rawJson = Json.parse[JsObject](Compression.uncompress(res.getRespSyncProfile.getGameContent.getRawJSON))
+				val version = (rawJson \ "version").as[String]
+				newSession = session.set("GameContentVersion", version)
+			}
 			newSession
 		}
 	}

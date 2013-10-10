@@ -19,8 +19,8 @@ class DummyDataAction(requestName: Expression[String], header: ClientServerMessa
 	def processResponse(s: SendComplete) = {
 		val session = s.request.session
 
-    println(s.response.get.payload.length)
-    val endTime = s.response.map(_.finishReadTime).getOrElse(s.receivingEndTime)
+		println(s.response.get.payload.length)
+		val endTime = s.response.map(_.finishReadTime).getOrElse(s.receivingEndTime)
 
 		DataWriter.tell(RequestMessage(session.scenarioName, session.userId, session.groupStack, s.request.requestName,
 			s.requestSendingEndTime, s.requestSendingEndTime, s.receivingEndTime, endTime, s.status, s.message))

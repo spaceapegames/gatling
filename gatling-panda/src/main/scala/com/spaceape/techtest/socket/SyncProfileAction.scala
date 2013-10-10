@@ -31,7 +31,7 @@ import com.spaceape.common.core.compress.Compression
 class SyncProfileAction(requestName: Expression[String], next: ActorRef)(implicit repoFactory: RepositoryFactory) extends SocketAction(requestName, next) with TicketGenerator {
 
 	def buildRequest(requestName: String, session: Session): SendMessage = {
-		val req =createBaseReqBuilder(session).
+		val req = createBaseReqBuilder(session).
 			setType(ReqRepType.SyncProfile).
 			setReqSyncProfile(ReqSyncProfile.newBuilder()).
 			build.toByteArray
@@ -39,16 +39,16 @@ class SyncProfileAction(requestName: Expression[String], next: ActorRef)(implici
 	}
 
 	def processResponse(s: SendComplete): Session =
-  {
+		{
 			var session = s.request.session
 			var status = s.status
 			var message = s.message
-      var finishTime = s.receivingEndTime
+			var finishTime = s.receivingEndTime
 
 			(s.response) match {
 				case Some(response) =>
-          finishTime = response.finishReadTime
-          session = session.set(SessionKey.Synced, true)
+					finishTime = response.finishReadTime
+					session = session.set(SessionKey.Synced, true)
 
 					val baseResp = BaseResp.parseFrom(response.payload)
 					if (baseResp.getStatus == ReqRepStatus.OK) {
@@ -61,7 +61,7 @@ class SyncProfileAction(requestName: Expression[String], next: ActorRef)(implici
 						}
 					}
 
-        /*
+				/*
           if (baseResp.getRespSyncProfile.hasGameContent){
             try{
               val rawJson = Json.parse[JsObject](Compression.uncompress(baseResp.getRespSyncProfile.getGameContent.getRawJSON))
@@ -76,16 +76,16 @@ class SyncProfileAction(requestName: Expression[String], next: ActorRef)(implici
           }
           */
 
-        case None =>
+				case None =>
 			}
 
-      DataWriter.tell(RequestMessage(session.scenarioName, session.userId, session.groupStack, s.request.requestName,
-				s.requestSendingEndTime, s.requestSendingEndTime, s.receivingEndTime,finishTime, status, s.message))
+			DataWriter.tell(RequestMessage(session.scenarioName, session.userId, session.groupStack, s.request.requestName,
+				s.requestSendingEndTime, s.requestSendingEndTime, s.receivingEndTime, finishTime, status, s.message))
 
-      if (finishTime > s.requestSendingEndTime){
-        DataWriter.tell(RequestMessage(session.scenarioName+"READTIME", session.userId, session.groupStack, s.request.requestName,
-          s.receivingEndTime, s.receivingEndTime,finishTime,finishTime, status, s.message))
-      }
+			if (finishTime > s.requestSendingEndTime) {
+				DataWriter.tell(RequestMessage(session.scenarioName + "READTIME", session.userId, session.groupStack, s.request.requestName,
+					s.receivingEndTime, s.receivingEndTime, finishTime, finishTime, status, s.message))
+			}
 
 			session
 		}

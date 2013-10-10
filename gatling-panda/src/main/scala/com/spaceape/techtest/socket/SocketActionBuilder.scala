@@ -34,29 +34,29 @@ object SocketActionBuilder {
 		}
 	}
 
-  def fetchDummyData(requestName: Expression[String])(implicit repoFactory: RepositoryFactory) = {
-    val ping = ClientServerMessageHeader.newBuilder().setService("dummy").setTokenid("1").build()
+	def fetchDummyData(requestName: Expression[String])(implicit repoFactory: RepositoryFactory) = {
+		val ping = ClientServerMessageHeader.newBuilder().setService("dummy").setTokenid("1").build()
 
-    new ActionBuilder {
-      def build(next: ActorRef): ActorRef = {
-        implicit val ec = repoFactory.ec
-        system.actorOf(Props(new DummyDataAction(requestName, ping, next)))
-      }
-    }
-  }
+		new ActionBuilder {
+			def build(next: ActorRef): ActorRef = {
+				implicit val ec = repoFactory.ec
+				system.actorOf(Props(new DummyDataAction(requestName, ping, next)))
+			}
+		}
+	}
 
-  def fetchDummyFutureData(requestName: Expression[String])(implicit repoFactory: RepositoryFactory) = {
-    val ping = ClientServerMessageHeader.newBuilder().setService("dummyfuture").setTokenid("1").build()
+	def fetchDummyFutureData(requestName: Expression[String])(implicit repoFactory: RepositoryFactory) = {
+		val ping = ClientServerMessageHeader.newBuilder().setService("dummyfuture").setTokenid("1").build()
 
-    new ActionBuilder {
-      def build(next: ActorRef): ActorRef = {
-        implicit val ec = repoFactory.ec
-        system.actorOf(Props(new DummyDataAction(requestName, ping, next)))
-      }
-    }
-  }
+		new ActionBuilder {
+			def build(next: ActorRef): ActorRef = {
+				implicit val ec = repoFactory.ec
+				system.actorOf(Props(new DummyDataAction(requestName, ping, next)))
+			}
+		}
+	}
 
-  def syncProfile(requestName: Expression[String])(implicit repoFactory: RepositoryFactory) = {
+	def syncProfile(requestName: Expression[String])(implicit repoFactory: RepositoryFactory) = {
 		new ActionBuilder {
 			def build(next: ActorRef): ActorRef = {
 				system.actorOf(Props(new SyncProfileAction(requestName, next)))
@@ -80,13 +80,13 @@ object SocketActionBuilder {
 		}
 	}
 
-	def findPlayersToAttack(requestName: Expression[String])(implicit repoFactory: RepositoryFactory) = {
-		new ActionBuilder {
-			def build(next: ActorRef): ActorRef = {
-          system.actorOf(Props(new PlayersToAttackAction(requestName, next)))
-			}
-		}
-	}
+//	def findPlayersToAttack(requestName: Expression[String])(implicit repoFactory: RepositoryFactory) = {
+//		new ActionBuilder {
+//			def build(next: ActorRef): ActorRef = {
+//				system.actorOf(Props(new PlayersToAttackAction(requestName, next)))
+//			}
+//		}
+//	}
 
 	def payForBattle(requestName: Expression[String])(implicit repoFactory: RepositoryFactory) = {
 		new ActionBuilder {

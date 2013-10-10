@@ -19,8 +19,8 @@ class SocketDataThroughputSimulation extends Simulation {
 
 	implicit val repositoryFactory = new RepositoryFactory
 
-  //repositoryFactory.socketGateway = "loadtest-socket-gateway-1.use1a.apelabs.net"
-  repositoryFactory.socketGateway = "loadtest-socket-gateway-1.use1a.apelabs.net"
+	//repositoryFactory.socketGateway = "loadtest-socket-gateway-1.use1a.apelabs.net"
+	repositoryFactory.socketGateway = "loadtest-socket-gateway-1.use1a.apelabs.net"
 
 	val clides = csv("test-clides-loadtest.csv").circular
 
@@ -30,13 +30,13 @@ class SocketDataThroughputSimulation extends Simulation {
 			exec(connect("connect"))
 				.doIf(isConnected(_)) {
 					repeat(10)(exec(fetchDummyFutureData("fetch dummy data"))).
-        exec(disconnect("disconnect"))
+						exec(disconnect("disconnect"))
 				}
 		}
 
 	setUp(
 		scn.inject(rampRate(1 usersPerSec) to (90 usersPerSec) during (1 minutes)))
-//    scn.inject(ramp(3 users) over (3 seconds)))
+	//    scn.inject(ramp(3 users) over (3 seconds)))
 
 	case class SendPing() extends SocketProcessor {
 		def processReq(header: ClientServerMessageHeader, payload: Array[Byte]) {}
@@ -49,6 +49,5 @@ class SocketDataThroughputSimulation extends Simulation {
 	override def tearDown {
 		repositoryFactory.shutdown
 	}
-
 
 }

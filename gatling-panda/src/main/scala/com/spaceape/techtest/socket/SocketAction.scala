@@ -4,7 +4,7 @@ import io.gatling.core.session._
 import com.spaceape.techtest._
 import akka.actor.ActorRef
 import io.gatling.core.action.Interruptable
-import com.spaceape.panda.proto.Commands.{ReqRepType, BaseReq, BaseResp, ClientServerMessageHeader}
+import com.spaceape.panda.proto.Commands.{ ReqRepType, BaseReq, BaseResp, ClientServerMessageHeader }
 import com.spaceape.http.client.header
 import com.redis.S
 import io.gatling.core.result.message.{ KO, RequestMessage, Status }
@@ -40,7 +40,7 @@ abstract class SocketAction(val requestName: Expression[String], val next: Actor
 				if (sendMessage == null) {
 					next ! session
 				} else {
-          session(SessionKey.SocketClient).as[SocketClientThread].sendMessage(sendMessage,self)
+					session(SessionKey.SocketClient).as[SocketClientThread].sendMessage(sendMessage, self)
 				}
 			case Failure(msg) =>
 				logger.error(msg)
@@ -48,16 +48,16 @@ abstract class SocketAction(val requestName: Expression[String], val next: Actor
 		}
 	}
 
-  def createBaseReqBuilder(session: Session) = {
-    val req = BaseReq.newBuilder().setId(1).setAuthenticationTicket(getTicketFromSession(session))
-    session(SessionKey.GameContentVersion).asOption[String] match{
-      case Some(version) =>
-        req.setContentVersion(version)
-      case None =>
-        //req.setContentVersion("18")
-    }
-    req
-  }
+	def createBaseReqBuilder(session: Session) = {
+		val req = BaseReq.newBuilder().setId(1).setAuthenticationTicket(getTicketFromSession(session))
+		session(SessionKey.GameContentVersion).asOption[String] match {
+			case Some(version) =>
+				req.setContentVersion(version)
+			case None =>
+			//req.setContentVersion("18")
+		}
+		req
+	}
 
 	override def receive = {
 
